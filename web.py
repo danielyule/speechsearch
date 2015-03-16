@@ -35,7 +35,8 @@ def search_corp(corp, sa, search_text):
                     total_terms += doc_term_count[doc]["$TOTAL$"]
                 diff = abs(freq - 0.5)
                 if diff <= 0.1:
-                    dividing_terms.add((current_term, occurrences / total_terms - 2 * term_count[current_term] / term_count["$TOTAL$"]))
+                    total_prob = term_count[current_term] / term_count["$TOTAL$"]
+                    dividing_terms.add((current_term, (occurrences / total_terms - total_prob) ** 2 / total_prob))
             included = set()
             current_term = entry.word
             occurrences = 0
