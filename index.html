@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Searching Magic</title>
+    <script>
+        var selectedDoc = "";
+        function handleResults() {
+            var results = JSON.parse(this.responseText),
+                resultsFrag = document.createDocumentFragment(),
+                suggestionFrag = document.createDocumentFragment(),
+                resultsDiv = document.getElementById('results'),
+                suggestionsDiv = document.getElementById('suggestions'),
+                docList = document.createElement("ul"),
+                docElement,
+                docIndex,
+                splitIndex,
+                splitLink;
+                for (docIndex = 0; docIndex < results.docs.length; docIndex+=1) {
+                    docElement = document.createElement("li");
+                    docElement.appendChild(document.createTextNode(results.docs[docIndex]));
+                    docElement.addEventListener("click", function() {
+                        selectedDoc = this.textContent;
+                        loadDocument(this.textContent);
+                    });
+                    docList.appendChild(docElement);
+                }
+            docList.className = "list-group";
+                resultsFrag.appendChild(docList);
+            resultsDiv.innerHTML = "";
+            resultsDiv.appendChild(resultsFrag);
+            if(results.splits.length > 0) {
+                suggestionFrag.appendChild(document.createTextNode("Look for documents with: "));
+                for (splitIndex = 0; splitIndex < results.splits.length; splitIndex += 1) {
+                    splitLink = document.createElement("span");
+                    splitLink.appendChild(document.createTextNode(results.splits[splitIndex]));
+                    splitLink.className = "btn btn-link";
+                    splitLink.addEventListener("click", function () {
+                        document.getElementById('search_text').value = document.getElementById('search_text').value + " " + this.textContent;
+                        doSearch()
+                    });
+                    suggestionFrag.appendChild(splitLink);
+                }
+            }
+            suggestionsDiv.innerHTML = "";
+            suggestionsDiv.appendChild(suggestionFrag);
+            drawDocList();
+
+        }
+
+        function drawDocList() {
+            var resultsDiv = document.getElementById('results'),
+                resultsList = resultsDiv.childNodes[0],
+                found_one = false,
+                resultItem,
+                index,
+                firstDoc;
+            if (resultsList.childNodes.length > 0) {
+                firstDoc = resultsList.childNodes[0];
+                for (index = 0; index < resultsList.childNodes.length; index += 1) {
+                    resultItem = resultsList.childNodes[index];
+                    if (resultItem.textContent == selectedDoc) {
+                        found_one = true;
+                        resultItem.className = "list-group-item active";
+                    } else {
+                        resultItem.className = "list-group-item";
+                    }
+                }
+                if (!found_one) {
+                    firstDoc.click();
+                }
+            }
+        }
+
+        function doSearch() {
+            var xhr = new XMLHttpRequest(),
+                search_text = document.getElementById('search_text');
+            xhr.open("GET", "search?" + search_text.value);
+            xhr.addEventListener("load", handleResults);
+            xhr.send()
+        }
+
+        function displayDocument() {
+            var elem = document.createElement("pre"),
+                doc = document.getElementById('document'),
+                text = this.responseText.replace("\n", "</h4><p>").replace(/\n/g, "</p><p>");
+            doc.innerHTML = "<h4>" + text + "</p>";
+
+        }
+
+        function loadDocument(docid) {
+            var xhr = new XMLHttpRequest(),
+                search_text = document.getElementById('search_text');
+            xhr.open("GET", "doc?" + docid);
+            xhr.addEventListener("load", displayDocument);
+            xhr.send()
+            selectedDoc = docid;
+            drawDocList();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var search_button = document.getElementById('search'),
+                results = document.getElementById('results'),
+                search_text = document.getElementById('search_text');
+            search_button.addEventListener("click", doSearch);
+            search_text.addEventListener("keypress", function(e) {
+                if(e.keyCode == 13) {
+                    doSearch()
+                }
+            })
+
+
+        })
+    </script>
+    <style type="text/css">
+        .left {
+            display: block;
+            width: 30%;
+            float:left;
+            padding-left: 20px;
+            padding-right: 30px;
+        }
+        .right{
+            display: block;
+            width: 60%;
+            float: left;
+        }
+
+        .list-group-item {
+            cursor: pointer;
+        }
+
+        #suggestions {
+            padding-top: 10px;
+        }
+
+        #results {
+            padding-top: 10px;
+        }
+
+
+    </style>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+    <h1>Searching Magic</h1>
+    <div class="left">
+        <span>
+            <input type="text" id="search_text" placeholder="enter keywords"/>
+            <button id="search" class="btn btn-primary">Search</button>
+        </span>
+        <div id="suggestions"></div>
+        <div id="results"></div>
+    </div>
+    <div class="right">
+        <div id="document"></div>
+    </div>
+</body>
+</html>
